@@ -22,6 +22,8 @@ Local Hint Rewrite <- map_rev : list.
 
 Local Hint Constructors rew_cfg : core.
 Local Hint Constructors rewt : core.
+Local Hint Constructors rew_cfg_left : core.
+Local Hint Constructors rewt_left : core.
 
 Lemma nil_app_nil {X} (A : list X) :
   A = [] ++ A ++ [].
@@ -70,23 +72,72 @@ Qed.
 
 Section CFGs.
 
+  Lemma cant_be (x y : list sig) (a : sig) :
+    x ++ a :: y = [] -> False.
+  Proof.
+    intros.
+    induction x; induction y; now simpl_list.
+  Qed.
+
+  Lemma empty_is_terminal (G: cfg) : terminal G [].
+  Proof.
+    unfold terminal. unfold not. intros. destruct H as [x']. inversion H. apply (cant_be x y a H0).
+  Qed.
+
   Lemma rewrite_sing R a x :
     (a, x) el rules R -> rew_cfg R [a] x.
   Proof.
     intro. rewrite nil_app_nil, (nil_app_nil [a]). now econstructor.
   Qed.
+
+  Lemma rewrite_sing_left R a x :
+    (a, x) el rules R -> rew_cfg_left R [a] x.
+  Proof.
+    intro. rewrite nil_app_nil, (nil_app_nil [a]).  econstructor.
+    split. 
+    + exact H. 
+    + exact (empty_is_terminal R).
+  Qed.
   
-  Global Instance rewtTrans R :
+  (* Lemma add_one_rule G1 S (x y: list sig) : rewt_left G1 [startsym G1] y -> rewt_left (S, [(S, [startsym G1])] ++ rules G1) S y.
+  Proof.
+    intros. rewrite <- (left'_iff_left G1 [startsym G1] y) in H.
+    rewrite <- (left'_iff_left (S, [(S, [startsym G1])] ++ rules G1) S y). 
+    induction H.
+    - apply (rewtRule_left' (S, [(S, x0)] ++ rules G1) S x0 x0 (rewR_left (S, [(S, x0)] ++ rules G1) [] S [] x0) (rewtRefl_left' (S, [(S, x0)] ++ rules G1) x0)).
+     +    
+    Check (rewtRule_left' (S, [(S, [startsym G1])] ++ rules G1) S [startsym G1] y). *)
+
+  Lemma rew_cfg_left_to_rewt_left R x y :
+    rew_cfg_left R x y -> rewt_left R x y.
+  Proof.
+    intros. econstructor; eauto.
+  Qed.
+
+
+  Global Instance rewtTrans' R :
     PreOrder (rewt R).
   Proof.
     split.
     - hnf. econstructor.
-    - induction 2; eauto.
+    - hnf. intros. induction H0 as [ | y' y'' IHy'y''].
+      + trivial.
+      + apply (rewtRule R x y' y'' IHIHy'y'' H0).   
   Qed.
+
+  Global Instance rewt_Trans R :
+    PreOrder (rewt R).
+  Proof.
+    split.
+    - hnf. econstructor.
+    - induction 2; eauto. 
+  Qed.
+
 
   Global Instance rewrite_proper R :
     Proper (rewt R ==> rewt R ==> rewt R) (@app sig).
   Proof.
+    unfold Proper.
     intros x1 y1 H1 x2 y2 H2.
     induction H1.
     - induction H2.
@@ -98,8 +149,48 @@ Section CFGs.
     - rewrite IHrewt. inv H. autorewrite with list. eauto.
   Qed.
 
+  (* rew_cfg R ((x1 ++ x) ++ [a] ++ y0) ((x1 ++ x) ++ v ++ y0)
+  rew_cfg_left R ((x1 ++ x) ++ [a] ++ y0) ((x1 ++ x) ++ v ++ y0) *)
+
+Theorem contrapositive : forall P Q : Prop, (P -> Q) -> (~Q -> ~P).
+Proof.
+  firstorder.
+Qed.
+
+(* Lemma left_rew_to_rew_cfg (G: cfg) (x: list sig) : forall y,
+  rew_cfg_left G x y -> rew_cfg G x y.
+Proof.
+  intros. repeat (destruct H). apply (rewR _ _ _ _ _). exact H.
+Qed.
+ *)
+(* 
+Lemma terminal_unchanged (R : cfg) (x1 : list sig) : forall x2 x3, rewt_left R (x1 ++ x2) (x1 ++ x3) -> terminal R x1.
+Proof.
+  induction x2; induction x3.
+  - 
+   *)
+
+Global Instance rewrite_proper_left R :
+Proper (rewt_left R ==> rewt_left R ==> rewt_left R) (@app sig).
+Proof.
+  intros x1 y1 H1 x2 y2 H2.
+  induction H1; induction H2.
+  - econstructor.
+  - rewrite IHrewt_left. inv H. eapply rewtRule_left.
+    * replace (x1 ++ x ++ [a] ++ y0) with ( (x1 ++ x) ++ [a] ++ y0) by now autorewrite with list. eauto.
+    *   
+Admitted.
+
   Global Instance subrel R :
     subrelation (rew_cfg R) (rewt R).
+  Proof.
+    intros x y H. econstructor.
+    - reflexivity.
+    - eassumption.
+  Qed.
+
+  Global Instance subrel_left R:
+    subrelation (rew_cfg_left R) (rewt_left R).
   Proof.
     intros x y H. econstructor.
     - reflexivity.
@@ -114,6 +205,7 @@ Section CFGs.
       exists (l1 ++ y ++ l2). change (s :: l2) with ([s] ++ l2). now econstructor.
     - intros H1 [y H2]. inv H2. eapply (H1 _ v); eauto.
   Qed.
+
 
   Definition sym_G (G : cfg) :=
     startsym G :: flat_map (fun '(a, x) => a :: x) (rules G).
@@ -132,7 +224,43 @@ Section CFGs.
         right. eapply in_flat_map. exists (a, v). eauto.
       + eapply cons_incl. eapply app_incl_R. eassumption.
   Qed.
+
+  (* Lemma rew_cfg_subset (G1 G2: cfg): *)
+
+  (* Lemma cfg_subset (G1 G2: cfg): forall y, (rewt_left G1 [startsym G1] y) -> (rules G1 <<= rules G2) -> (In ((startsym G2), [startsym G1]) (rules G2)) -> rewt_left G2 [startsym G2] y.
+  Proof.
+    intros. induction H. 
+    (* assert (rewt_left G2 [startsym G2] [startsym G1]).
+    - econstructor; eauto. exact (rewrite_sing_left G2 (startsym G2) [startsym G1] H1). *)
+    - exact (rew_cfg_left_to_rewt_left G2 [startsym G2] [startsym G1] ((rewrite_sing_left G2 (startsym G2) [startsym G1]) H1)).
+    - inversion H2; subst.
+    Admitted. *)
   
+  Lemma cfg_subset_too_strong_precondition (G1 G2: cfg): forall x y, (rewt_left G1 x y) -> (rules G1 <<= rules G2) -> (forall z, terminal G1 z -> terminal G2 z) -> (rewt_left G2 x y).
+  Proof.
+    intros. induction H.
+    - firstorder.
+    - econstructor. 
+    + eauto. 
+    + inv H2. econstructor. firstorder.
+  Qed.
+
+  Lemma cfg_subset (G1 G2: cfg) : forall y, rewt_left G1 [startsym G1] y -> (forall s, In s (map fst (rules G2)) -> ~(In s (flat_map snd (rules G1) ++ [startsym G1]))) -> rewt_left (startsym G1, rules G2 ++ rules G1) [startsym G1] y.
+  Proof.
+    intros. induction H.
+    - eauto.
+    - econstructor.
+      + eauto.
+      + inv H1. destruct H2 as [H3 H4]. assert ((a, v)
+      el rules (startsym G1, rules G2 ++ rules G1)).
+        -- unfold rules. unfold rules in H3. simpl. firstorder.
+        -- assert (terminal (startsym G1, rules G2 ++ rules G1) x).
+          ++  Admitted.
+          
+        (* exact (rewR_left (startsym G1, rules G2 ++ rules G1) x a y0 v H1). *)
+
+  (* Qed. *)
+
 End CFGs.
 
 Section Post_CFG.
@@ -144,7 +272,7 @@ Section Post_CFG.
   Definition S : nat := fresh Sigma.
 
   Definition G := (S, (S,[S]) :: map (fun '(u, v) => (S, u ++ [S] ++ v)) R ++ map (fun '(u, v) => (S, u ++ [a] ++ v)) R).
-
+  
   Lemma terminal_iff_G y :
     terminal G y <-> ~ S el y.
   Proof.
@@ -155,6 +283,7 @@ Section Post_CFG.
     - intros (u' & v' & ?) % List.in_split.
       subst. exists (u' ++ [S] ++ v'). econstructor. cbn. eauto.
   Qed.
+
 
   Lemma rewt_count x :
     rewt G [S] x -> count x S <= 1.
@@ -185,7 +314,38 @@ Section Post_CFG.
         edestruct (fresh_spec) with (l := Sigma); try reflexivity.
         eapply sym_word_l in H1. unfold Sigma. eauto.
   Qed.
-  
+
+  Lemma rewt_count_left x :
+    rewt_left G [S] x -> count x S <= 1.
+  Proof.
+    induction 1.
+    - cbn. rewrite <- (beq_nat_refl S). firstorder.
+    - inv H0. destruct H1 as [H11 H12]. destruct H11 as [ | [ [[] []] % in_map_iff | [[] []] % in_map_iff ] % in_app_iff]; inv H0. 
+    + eauto.
+    + simpl_list. rewrite <- !countSplit in *. cbn in *.
+      rewrite Nat.eqb_refl in *.
+      enough (count l S = 0) as ->. { enough (count l0 S = 0) as ->. { lia. }
+      eapply notInZero. intros D.
+      edestruct (fresh_spec) with (l := Sigma); try reflexivity.
+      eapply sym_word_R in H1. unfold Sigma. eauto. }
+      eapply notInZero. intros D.
+      edestruct (fresh_spec) with (l := Sigma); try reflexivity.
+      eapply sym_word_l in H1. unfold Sigma. eauto. 
+    + unfold Sigma. simpl_list. rewrite <- !countSplit in *. cbn in *.
+      rewrite Nat.eqb_refl in *.
+      assert (S =? a = false) as ->. { eapply Nat.eqb_neq. intros D.
+      edestruct fresh_spec with (l := Sigma); try reflexivity.
+      unfold S in *. rewrite D. unfold Sigma; eauto. }
+      enough (count l S = 0) as ->. { enough (count l0 S = 0) as ->. { lia. }
+      eapply notInZero. intros D.
+      edestruct (fresh_spec) with (l := Sigma); try reflexivity.
+      eapply sym_word_R in H1. unfold Sigma. eauto. } 
+      eapply notInZero. intros D.
+      edestruct (fresh_spec) with (l := Sigma); try reflexivity.
+      eapply sym_word_l in H1. unfold Sigma. eauto.
+Qed.
+
+
   Lemma Post_CFG_1' A :
     A <<= R -> A = [] \/ rewt G [S] (sigma a A).
   Proof.
@@ -198,6 +358,19 @@ Section Post_CFG.
       + right. erewrite rewrite_sing with (x := u ++ [S] ++ v). 
         { now rewrite H0. } right. eapply in_app_iff. left. eapply in_map_iff. exists (u,v); eauto.
   Qed.
+
+  Lemma Post_CFG_1_left A :
+    A <<= R -> A = [] \/ rewt_left G [S] (sigma a A).
+  Proof.
+  induction A.
+    - cbn. eauto.
+    - intros.  assert (A <<= R) by eauto. eapply IHA in H0.
+      destruct a0 as [u v]. destruct H0.
+      + subst. right. erewrite rewrite_sing_left with (x := u ++ [a] ++ v). { reflexivity. }
+        right. eapply in_app_iff. right. eapply in_map_iff. exists (u,v); eauto.
+      + right. erewrite rewrite_sing_left with (x := u ++ [S] ++ v). 
+        { now rewrite H0. } right. eapply in_app_iff. left. eapply in_map_iff. exists (u,v); eauto.
+  Qed.   
 
   Lemma Post_CFG_2 x :
     rewt G [S] x ->
@@ -241,6 +414,50 @@ Section Post_CFG.
           eapply rewt_count in H. rewrite <- !countSplit in H. cbn in H.
           rewrite Nat.eqb_refl in H. eapply notInZero. lia.
         * destruct A; cbn; firstorder congruence.
+  Qed.
+
+
+  Lemma Post_CFG_2_left x :
+    rewt_left G [S] x ->
+    exists A m, A <<= R /\ sigma m A = x /\ (m = S \/ m = a /\ A <> []).
+    intros. induction H.
+    - cbn.  exists [], S. eauto.
+    - inv H0. destruct H1 as [ H12 H22 ]. destruct H12 as [| [(? & ? & ?) % in_map_iff | (? & ? & ?) % in_map_iff] % in_app_iff]; inv H0.
+      + eassumption.
+      + destruct x0 as [u' v']. inv H3.
+        destruct IHrewt_left as (A & m & HA & IHA & Hm).
+        exists (A ++ [(u', v')]), S. repeat split.
+        * eauto.
+        * simpl_list. cbn.
+          enough (~ S el x). { enough (~ S el y0). {
+          eapply sigma_snoc with (s := S); eauto.
+          assert (IH2 := IHA).
+          eapply sigma_inv in IHA; eauto. { subst. eauto. }
+          intros D. 
+          edestruct fresh_spec with (l := sym R ++ [a]); try reflexivity.
+          eapply in_app_iff. left. eapply sym_mono. { eauto. } eauto. }
+          eapply rewt_count_left in H. rewrite <- !countSplit in H. cbn in H.
+          rewrite Nat.eqb_refl in H. eapply notInZero. lia. }
+          eapply rewt_count_left in H. rewrite <- !countSplit in H. cbn in H.
+          rewrite Nat.eqb_refl in H. eapply notInZero. lia.
+        * eauto.
+      + destruct x0 as [u' v']. inv H3.
+        destruct IHrewt_left as (A & m & HA & IHA & Hm).
+        exists (A ++ [(u', v')]), a. repeat split.
+        * eauto.
+        * simpl_list. cbn.
+          enough (~ S el x). { enough (~ S el y0). {
+          eapply sigma_snoc with (s := S); eauto.
+          -- assert (IH2 := IHA).
+          eapply sigma_inv in IHA; eauto. { subst. eauto. }
+          intros D. 
+          edestruct fresh_spec with (l := sym R ++ [a]); try reflexivity.
+          eapply in_app_iff. left. eapply sym_mono. { eauto. } eauto. }
+          eapply rewt_count_left in H. rewrite <- !countSplit in H. cbn in H.
+          rewrite Nat.eqb_refl in H. eapply notInZero. lia. }
+          eapply rewt_count_left in H. rewrite <- !countSplit in H. cbn in H.
+          rewrite Nat.eqb_refl in H. eapply notInZero. lia.
+        * destruct A; cbn; firstorder congruence. 
   Qed.
 
   Lemma reduction_full x :

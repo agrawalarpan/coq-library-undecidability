@@ -217,6 +217,7 @@ CFG/Reductions/PCP_to_CFPP.v
 CFG/Reductions/PCP_to_CFPI.v
 CFG/Reductions/CFPP_to_CFP.v
 CFG/Reductions/CFPI_to_CFI.v
+CFG/Reductions/PCP_to_CFA.v
 
 FOL/FOL.v
 FOL/FOL_undec.v

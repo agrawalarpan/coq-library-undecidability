@@ -23,13 +23,16 @@ Section PCP_CFPI.
   
   Definition gamma1 (A : stack nat) :=
     map (fun '(x, y) => (x, (x ++ [#] ++ y ++ [#]))) A.
+
   Definition gamma2 (A : stack nat) :=
     map (fun '(x, y) => (y, (x ++ [#] ++ y ++ [#]))) A.
+
   Fixpoint gamma (A : stack nat) :=
     match A with
     | [] => []
     | (x, y) :: A => gamma A ++ x ++ [#] ++ y ++ [#]
     end.
+
 
   Lemma sigma_gamma1 A :
     sigma # (gamma1 A) = tau1 A ++ [#] ++ gamma A.
@@ -116,9 +119,10 @@ End PCP_CFPI.
 Theorem reduction :
   PCP ⪯ CFPI. 
 Proof.
+  unfold "⪯".
   exists (fun P => (gamma1 P P, gamma2 P P, fresh (sym P))). intros P.
   split.
-  - intros (A & Hi & He & H). exists (gamma1 P A), (gamma2 P A). repeat split.
+  - intros (A & Hi & He & H). unfold CFPI. exists (gamma1 P A), (gamma2 P A). repeat split.
     + clear He H. induction A as [ | [] ]. { firstorder. } intros ? [ <- | ].
       { unfold gamma1. eapply in_map_iff. exists (l, l0). firstorder. } firstorder.
     + clear He H. induction A as [ | [] ]. { firstorder. } intros ? [ <- | ].
