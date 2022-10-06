@@ -1,5 +1,5 @@
 (* 
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1) 
   Affiliation(s):
     (1) Saarland University, Saarbrücken, Germany
@@ -28,7 +28,6 @@ Require Import Undecidability.StackMachines.Reductions.CM1_HALT_to_SMNdl_UB.CM1_
 
 Require Import ssreflect ssrbool ssrfun.
 
-Set Default Proof Using "Type".
 Set Default Goal Selector "!".
 
 Module Argument.

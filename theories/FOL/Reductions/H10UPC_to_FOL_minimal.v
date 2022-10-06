@@ -6,7 +6,7 @@ From Undecidability.FOL Require Import Util.Syntax Util.Kripke Util.Deduction Ut
 From Undecidability.Shared Require Import Dec.
 From Undecidability.Shared.Libs.PSL Require Import Numbers.
 From Coq Require Import Arith Lia List.
-
+Import Undecidability.Shared.ListAutomation.ListInstances.
 
 (* ** Validity *)
 
@@ -21,7 +21,6 @@ Idea: The relation (#&#35;#) has the following properties:#<ul>#
 *)
 
 
-Set Default Proof Using "Type".
 Set Default Goal Selector "!".
 
 
@@ -964,7 +963,7 @@ Section ksatisfiability.
   Qed.
 End ksatisfiability.
 
-Require Import Undecidability.Synthetic.Definitions Undecidability.Synthetic.Undecidability.
+Require Import Undecidability.Synthetic.Definitions.
 
 (** Final collection of undecidability reductions *)
 Section undecResults.

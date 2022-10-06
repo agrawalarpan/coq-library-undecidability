@@ -18,11 +18,14 @@ Set Implicit Arguments.
 
 Section prime.
 
-  Hint Resolve divides_0 divides_mult divides_refl divides_0_inv : core.
+  Hint Resolve divides_0 divides_1 divides_mult divides_refl divides_0_inv : core.
 
   Infix "<d" := divides (at level 70, no associativity).
 
   Definition prime p := p <> 1 /\ forall q, q <d p -> q = 1 \/ q = p.
+
+  Fact prime_divides p q : prime p -> prime q -> p <d q -> p = q.
+  Proof. now intros Hp Hq [ []%Hp | ]%Hq. Qed.
 
   Fact prime_2 : prime 2.
   Proof. 
@@ -171,6 +174,14 @@ Section prime.
     right; revert H H2; apply is_rel_prime_div.
   Qed.
 
+  Fact divides_pow p n k : prime p -> p <d n^k -> p <d n.
+  Proof.
+    intros Hp.
+    induction k as [ | k IHk ]; simpl.
+    + now intros ->%divides_1_inv.
+    + intros []%prime_div_mult; auto.
+  Qed.
+
   Definition prime_or_div p : 2 <= p -> { q | 2 <= q < p /\ q <d p } + { prime p }.
   Proof.
     intros Hp.
@@ -203,7 +214,7 @@ Section prime.
     2: exists n; auto.
     destruct (IHn q) as (p & H3 & H4); try lia.
     exists p; split; auto.
-    apply divides_trans with (1 := H4); auto.
+    now apply divides_trans with (1 := H4).
   Qed.
 
   Section prime_rect.
@@ -215,7 +226,7 @@ Section prime.
               (HPm : forall x y, P x -> P y -> P (x*y)).
 
     Theorem prime_rect n : P n.
-    Proof.
+    Proof using HP0 HP1 HPp HPm.
       induction on n as IHn with measure n.
       destruct n as [ | [ | n ] ]; auto.
       destruct (@prime_factor (S (S n))) as (p & H1 & H2); try lia.
@@ -407,7 +418,7 @@ Section base_decomp.
     Proof. apply (proj2_sig (base_p_full n)). Qed.
 
     Fact base_p_uniq l1 l2 : Forall2 (fun x y => x < p /\ y < p) l1 l2 -> expand p l1 = expand p l2 -> l1 = l2.
-    Proof.
+    Proof using Hp.
       induction 1 as [ | x1 x2 l1 l2 H1 H2 IH2 ]; auto; simpl; intros H3.
       rewrite (plus_comm x1), (plus_comm x2), (mult_comm p), (mult_comm p) in H3.
       apply div_rem_uniq in H3; try lia.

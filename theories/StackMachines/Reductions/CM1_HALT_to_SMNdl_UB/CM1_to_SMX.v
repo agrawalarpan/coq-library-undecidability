@@ -1,5 +1,5 @@
 (* 
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1) 
   Affiliation(s):
     (1) Saarland University, Saarbrücken, Germany
@@ -26,7 +26,6 @@ From Undecidability.StackMachines.Util Require Import Facts Nat_facts List_facts
 
 Require Import ssreflect ssrbool ssrfun.
 
-Set Default Proof Using "Type".
 Set Default Goal Selector "!".
 
 Local Arguments in_combine_l {A B l l' x y}.

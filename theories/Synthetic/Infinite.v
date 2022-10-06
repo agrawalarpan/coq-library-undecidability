@@ -8,8 +8,6 @@ Import ListAutomationNotations.
 Local Set Implicit Arguments.
 Local Unset Strict Implicit.
 
-Set Default Proof Using "Type".
-
 Definition mu (p : nat -> Prop) :
   (forall x, dec (p x)) -> ex p -> sig p.
 Proof.
@@ -154,7 +152,7 @@ Section Inf.
     exists (f (mu' H1 H2)). split; try apply proj2_sig.
     intros y Hy. exists (mu' H1 H2). split; trivial.
     intros n <-. apply mu_least, Hy.
-  Defined.
+  Qed.
 
   Definition gen' A :=
     proj1_sig (gen A).

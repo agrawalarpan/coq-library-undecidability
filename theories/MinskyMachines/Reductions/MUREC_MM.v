@@ -7,18 +7,16 @@
 (*         CeCILL v2 FREE SOFTWARE LICENSE AGREEMENT          *)
 (**************************************************************)
 
-Require Import Undecidability.Synthetic.Undecidability.
+Require Import Undecidability.Synthetic.Definitions.
 
 From Undecidability.Shared.Libs.DLW 
   Require Import pos vec sss.
 
 From Undecidability.MinskyMachines
-  Require Import MM.
+  Require Import MM MM_sss.
 
-From Undecidability.MuRec 
+From Undecidability.MuRec.Util 
   Require Import recalg ra_simul.
-
-Set Default Proof Using "Type".
 
 Local Notation "'⟦' f '⟧'"  := (@ra_rel _ f) (at level 0).
 Local Notation "P /MM/ s ↓" := (sss_terminates (@mm_sss _) P s) (at level 70, no associativity).

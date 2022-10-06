@@ -10,7 +10,7 @@
 Require Import List Arith Lia.
 Import ListNotations.
 
-Require Import Undecidability.Synthetic.Undecidability.
+Require Import Undecidability.Synthetic.Definitions.
 
 From Undecidability.Shared.Libs.DLW 
   Require Import utils list_bool pos vec subcode sss.
@@ -21,13 +21,11 @@ From Undecidability.StackMachines.BSM
 From Undecidability.PCP 
   Require Import PCP PCP_facts.
 
-Set Default Proof Using "Type".
-
 Fact tile_concat_itau ln lt : tile_concat ln lt = (itau1 lt (rev ln), itau2 lt (rev ln)).
 Proof.
   induction ln as [ | i ln IH ]; simpl; auto.
   rewrite itau1_app, itau2_app; simpl.
-  unfold card, string; generalize (nth i lt ([], [])); intros (a,b); rewrite IH.
+  generalize (nth i lt ([], [])); intros (a,b); rewrite IH.
   repeat rewrite <- app_nil_end; auto.
 Qed.
 
@@ -69,11 +67,12 @@ Section iPCPb_to_BSM_HALTING.
     intros; rewrite pcp_bsm_size; lia.
   Qed.
   
-  Theorem iPCPb_to_BSM_HALTING : iPCPb ⪯ BSM_HALTING.
+  Theorem iPCPb_to_BSM_HALTING : iPCPb ⪯ Halt_BSM.
   Proof.
     exists f.
     intros lt.
     rewrite <- tiles_solvable_iBPCP.
+    rewrite Halt_BSM_iff.
     unfold BSM_HALTING; split.
     * intros H.
       apply pcp_bsm_sound with (v := vec_set_pos (fun _ => nil)) in H.

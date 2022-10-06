@@ -1,5 +1,5 @@
 (* 
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1) 
     Johannes Hostert (1) 
   Affiliation(s):
@@ -8,8 +8,6 @@
 
 Require Import Arith Lia List.
 From Undecidability.DiophantineConstraints Require Import H10C.
-
-Set Default Proof Using "Type".
 
 (** Utils for H10UPC *)
 

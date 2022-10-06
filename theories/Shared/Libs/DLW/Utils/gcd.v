@@ -142,6 +142,11 @@ Section divides.
     rewrite mult_comm; apply divides_mult; auto.
   Qed.
 
+  Fact divides_left x k : divides x (x*k).
+  Proof.
+    apply divides_mult_r, divides_refl. 
+  Qed.
+
   Fact divides_mult_compat a b c d : a div b -> c div d -> a*c div b*d.
   Proof. 
     intros (u & ?) (v & ?); exists (u*v); subst.
@@ -831,10 +836,10 @@ Section rem.
   Qed.
 
   Fact rem_diag : rem p p = 0.
-  Proof. apply rem_prop with 1; lia. Qed.
+  Proof using Hp. apply rem_prop with 1; lia. Qed.
 
   Fact rem_lt a : a < p -> rem a p = a.
-  Proof. apply rem_prop with 0; lia. Qed.
+  Proof using Hp. apply rem_prop with 0; lia. Qed.
 
   Fact rem_plus a b : rem (a+b) p = rem (rem a p + rem b p) p.
   Proof.
@@ -853,7 +858,7 @@ Section rem.
   Qed.
 
   Fact rem_plus_div a b : divides p b -> rem a p = rem (a+b) p.
-  Proof. 
+  Proof using Hp. 
     intros (n & Hn); subst.
     rewrite <- rem_plus_rem.
     f_equal.  
@@ -861,13 +866,13 @@ Section rem.
   Qed.
 
   Fact div_eq_0 n : n < p -> div n p = 0.
-  Proof. intros; apply div_prop with n; lia. Qed.
+  Proof using Hp. intros; apply div_prop with n; lia. Qed.
 
   Fact div_of_0 : div 0 p = 0.
-  Proof. apply div_eq_0; lia. Qed.
+  Proof using Hp. apply div_eq_0; lia. Qed.
 
   Fact div_ge_1 n : p <= n -> 1 <= div n p.
-  Proof.
+  Proof using Hp.
     intros H2.
     rewrite (div_rem_spec1 n p) in H2.
     generalize (div_rem_spec2 n Hp); intros H3.

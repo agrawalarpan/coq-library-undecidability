@@ -12,9 +12,7 @@ Require Import List Arith Lia.
 From Undecidability.Shared.Libs.DLW
   Require Import utils pos vec subcode sss.
 
-From Undecidability.MinskyMachines Require Export MM.
-
-Set Default Proof Using "Type".
+From Undecidability.MinskyMachines Require Export MM MMA.
 
 Set Implicit Arguments.
 

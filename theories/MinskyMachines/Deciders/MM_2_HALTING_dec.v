@@ -1,5 +1,5 @@
 (*
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1)
   Affiliation(s):
     (1) TU Dortmund University, Dortmund, Germany
@@ -13,7 +13,7 @@
 Require Import PeanoNat Lia List.
 Import ListNotations.
 
-Require Import Undecidability.MinskyMachines.MM.
+From Undecidability.MinskyMachines Require Import MM MM_sss.
 Require Undecidability.MinskyMachines.Deciders.MPM2_HALT_dec.
 Module MPM2 := MPM2_HALT_dec.
 
@@ -25,7 +25,6 @@ Require Import Undecidability.CounterMachines.Util.Facts.
 Require Import ssreflect ssrbool ssrfun.
 
 Set Default Goal Selector "!".
-Set Default Proof Using "Type".
 
 #[local] Notation "P // s ↓" := (sss_terminates (@mm_sss _) P s).
 #[local] Notation "P // r ->> s" := (sss_compute (@mm_sss _) P r s).

@@ -1,5 +1,5 @@
 (*
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1)
   Affiliation(s):
     (1) TU Dortmund University, Dortmund, Germany
@@ -17,7 +17,6 @@ From Undecidability.CounterMachines.Util Require Import Facts CM2_facts.
 Require Import ssreflect ssrbool ssrfun.
 
 Set Default Goal Selector "!".
-Set Default Proof Using "Type".
 
 Section Construction.
 Variable M : Cm2.

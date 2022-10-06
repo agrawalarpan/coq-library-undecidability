@@ -1,9 +1,10 @@
-From Undecidability.L Require Import Util.L_facts Prelim.StringBase.
+From Undecidability.L Require Import Util.L_facts Prelim.StringBase. 
 From MetaCoq Require Import Template.All Template.Checker.
 Require Import Undecidability.Shared.Libs.PSL.Base. 
-Require Import String Ascii.
+From MetaCoq Require Import bytestring.
 
-Open Scope string_scope.
+Open Scope bs.
+
 Import MCMonadNotation.
 
 Unset Universe Minimization ToSet.
@@ -47,6 +48,8 @@ Definition stack {X : Type} (l : list (X -> X)) (x : X) := fold_right (fun f x =
 
 (*  Auxiliary monadic functions *)
 
+Open Scope bs.
+
 (* Get the head of a list *)
 Definition hd {X : Type} (l : list X) : TemplateMonad X :=
   match l with
@@ -79,9 +82,9 @@ Definition tmTryInfer (n : ident) (red : option reductionStrategy) (A : Type) : 
 (* Generate a name for a quoted term *)
 Definition name_of (t : Ast.term) : ident :=
   match t with
-    tConst (modp, n) _ => name_after_dot n
-  | tConstruct (mkInd (modp, n) _) i _ => "cnstr_"  ++ name_after_dot n ++ string_of_int i
-  | tInd (mkInd (modp, n) _) _ => "type_" ++ name_after_dot n
+    tConst (modp, n) _ => String.of_string (name_after_dot (String.to_string n))
+  | tConstruct (mkInd (modp, n) _) i _ => "cnstr_"  ++ String.of_string (name_after_dot (String.to_string n)) ++ string_of_int i
+  | tInd (mkInd (modp, n) _) _ => "type_" ++ String.of_string (name_after_dot (String.to_string n))
   | tVar i => "var_" ++ i
   | _ => "no_name" 
   end.
@@ -138,8 +141,8 @@ Fixpoint argument_types (B : Ast.term) :=
 (* Split an inductive types applied to parameters into the naked inductive, the number of parameters and the list of parameters *)
 Definition split_head_symbol A : option (inductive * list term) :=
   match A with
-  | tApp (tInd ind u) R => ret (ind, R)
-  | tInd ind u => ret (ind, [])
+  | tApp (tInd ind u) R => Some (ind, R)
+  | tInd ind u => Some (ind, [])
   | _ => None
   end.
 
@@ -154,7 +157,7 @@ Definition list_constructors (ind : inductive) : TemplateMonad (list (ident * te
 (* determine whether two inductives are equal, based on their name *)
 Definition eq_inductive (hs hs2 : inductive) :=
   match hs, hs2 with
-  | mkInd k _, mkInd k2 _ => if kername_eq_dec k k2 then true else false
+  | mkInd k _, mkInd k2 _ => if eq_constant k k2 then true else false
   end.
 
 (* Get the argument types for a constructor (specified by inductive and index) *)
@@ -170,7 +173,14 @@ Arguments int_ext {_} _ {_}.
 #[export] Typeclasses Transparent extracted. (* This is crucial to use this inside monads  *)
 #[export] Hint Extern 0 (extracted _) => progress (cbn [Common.my_projT1]): typeclass_instances. 
 
-Class encodable (A : Type) := enc_f : A -> L.term.  
+Class encodable (X : Type) := mk_encodable
+  {
+    enc : X -> L.term ; (* the encoding function for X *)
+    proc_enc : forall x, proc (enc x) ; (* encodings need to be a procedure *)
+  }.
+Global Hint Mode encodable + : typeclass_instances. (* treat argument as input and force evar-freeness*)
+
+Arguments enc : simpl never.  (* Never unfold with cbn/simpl *)
 
 (* Construct quoted L terms and natural numbers *)
 
@@ -258,8 +268,7 @@ Definition encode_arguments (B : term) (a i : nat) A_j :=
       A <- tmUnquoteTyped Type A_j ;;
       name <- (tmEval cbv (name_of A_j ++ "_term") >>=  tmFreshName)  ;;
       E <- tmTryInfer name None (encodable A);;
-      t <- tmEval hnf (@enc_f A E);;
-      l <- tmQuote t;;
+      l <- tmQuote (@enc A E);;
       ret (tApp l [tRel (a - i - 1) ]).
 
 Definition tmInstanceRed name red {X} (x:X) :=
@@ -278,7 +287,7 @@ Definition tmQuoteInductiveDecl (na : kername) : TemplateMonad (mutual_inductive
   | _ => tmFail "Mutual inductive types are not supported"
   end.
 
-Definition tmEncode (name : string) (A : Type) :=
+Definition tmEncode (A : Type) : TemplateMonad (A -> L.term) :=
   t <- (tmEval hnf A >>= tmQuote) ;; 
   hs_num <- tmGetOption (split_head_symbol t) "no inductive";;
   let '(ind, Params) := hs_num in
@@ -286,7 +295,15 @@ Definition tmEncode (name : string) (A : Type) :=
   let '(mdecl,idecl) := decl in
   num <- tmEval cbv (| ind_ctors idecl |) ;;
   let params := firstn mdecl.(ind_npars) Params in
-  f <- tmFreshName "encode" ;;
+  f <- tmFreshName ("enc_" ++ snd (inductive_mind ind))  ;;
+(*
+  Definition tmEncode (A : Type) : TemplateMonad (A -> L.term):=
+  t <- (tmEval hnf A >>= tmQuote) ;; 
+  hs_num <- tmGetOption (split_head_symbol t) "no inductive";;
+  let '(ind, Params) := hs_num in
+  num <- tmNumConstructors (inductive_mind ind) ;;
+  f <- tmFreshName ("enc_" ++ snd (inductive_mind ind))  ;;
+*)
   x <- tmFreshName "x" ;; 
   ter <- mkFixMatch f x t (* argument type *) tTerm (* return type *) (mk_predicate Instance.empty params (context_to_bcontext (ind_predicate_context ind mdecl idecl)) tTerm)
            (fun i (* ctr index *) ctr_types (* ctr type *) => 
@@ -295,38 +312,40 @@ Definition tmEncode (name : string) (A : Type) :=
               ret ( (* stack (map (tLambda (naAnon)) ctr_types) *)
                                (it mkLam num ((fun s => mkAppList s C) (mkVar (mkNat (num - i - 1))))))
            ) ;;
-  u <- tmUnquoteTyped (encodable A) ter;; 
- tmInstanceRed name None u;;
- tmEval hnf u.
+  u <- tmUnquoteTyped (A -> L.term) ter;; 
+ ret u.
 
 (* **** Examples *)
 (* Commented out for less printing while compiling *)
 
-(* MetaCoq Run (tmEncode "unit_encode" unit >>= tmPrint). *)
+(* MetaCoq Run (tmEncode unit >>= tmPrint).
 
-(* MetaCoq Run (tmEncode "bool_encode" bool >>= tmPrint). *)
+MetaCoq Run (tmEncode bool >>= tmPrint).
 
-(* MetaCoq Run (tmEncode "nat_encode" nat >>= tmPrint). *)
+MetaCoq Run (tmEncode nat >>= tmPrint).
 
-(* MetaCoq Run (tmEncode "term_encode" L.term >>= tmPrint). *)
+Section term.
+  Context { encA : encodable nat}.
+  MetaCoq Run (tmEncode L.term >>= tmPrint).
+End term.
 
-(* Inductive triple (X Y Z : Type) : Type := *)
-(*   trip (x : X) (y : Y) (z : Z) : triple X Y Z. *)
+Inductive triple (X Y Z : Type) : Type :=
+  trip (x : X) (y : Y) (z : Z) : triple X Y Z.
 
-(* Section encode. *)
+Section encode.
 
-(*   Variable A B C : Type. *)
-(*   Context { encA : encodable A}. *)
-(*   Context { encB : encodable B}. *)
-(*   Context { encC : encodable C}. *)
+  Variable A B C : Type.
+  Context { encA : encodable A}.
+  Context { encB : encodable B}.
+  Context { encC : encodable C}.
     
-(*   MetaCoq Run (tmEncode "prod_encode" (@prod A B) >>= tmPrint). *)
+  MetaCoq Run (tmEncode (@prod A B) >>= tmPrint).
 
-(*   MetaCoq Run (tmEncode "list_encode" (@list A) >>= tmPrint). *)
+  MetaCoq Run (tmEncode (@list A) >>= tmPrint).
 
-(*   MetaCoq Run (tmEncode "triple_encode" (@triple A B C) >>= tmPrint). *)
+  MetaCoq Run (tmEncode (@triple A B C) >>= tmPrint).
 
-(* End encode. *)
+End encode. *)
 
 (* *** Generation of constructors *)
 
@@ -520,9 +539,10 @@ Fixpoint extract (env : nat -> nat) (s : Ast.term) (fuel : nat) : TemplateMonad 
   | tInd a _ =>  tmPrint a;;tmFail "tInd is not supported (probably there is a type not in prenex-normal form)" 
   | tProj _ _ =>   tmFail "tProj is not supported"
   | tCoFix _ _ =>  tmFail "tCoFix is not supported"
-  | tInt _ =>  tmFail "tInt is not supported"
+  (* | tInt _ =>  tmFail "tInt is not supported"
   | tFloat _ =>  tmFail "tFloat is not supported"
-  end end.
+   *)
+   end end.
 
 Fixpoint head_of_const (t : term) :=
   match t with
@@ -591,4 +611,3 @@ Opaque extracted.
 
 Global Obligation Tactic := idtac.
 
-#[export] Typeclasses Transparent encodable.

@@ -9,7 +9,7 @@
 
 Require Import List.
 
-From Undecidability.Synthetic Require Import Undecidability.
+Require Import Undecidability.Synthetic.Definitions.
 
 From Undecidability.Shared.Libs.DLW.Utils
   Require Import utils_tac utils_nat.
@@ -20,10 +20,8 @@ From Undecidability.Shared.Libs.DLW.Vec
 From Undecidability.H10 
   Require Import Dio.dio_single H10.
 
-From Undecidability.MuRec 
-  Require Import recalg ra_dio_poly.
-
-Set Default Proof Using "Type".
+From Undecidability.MuRec.Util 
+  Require Import recalg ra_dio_poly ra_sem_eq.
 
 Section H10_MUREC_HALTING.
 
@@ -33,10 +31,12 @@ Section H10_MUREC_HALTING.
     exact (ra_dio_poly_find p q).
   Defined.
 
-  Theorem H10_MUREC_HALTING : H10 ⪯ MUREC_HALTING.
-  Proof.
-    exists f.
-    intros (n & p & q); simpl; unfold MUREC_HALTING.
+  Theorem H10_MUREC_HALTING : H10 ⪯ Halt_murec.
+  Proof. 
+    unshelve eexists.
+    { intros (n & p & q). exists 0. 2: exact vec_nil. exact (ra_dio_poly_find p q). }
+    intros (n & p & q); simpl; unfold Halt_murec.
+    setoid_rewrite <- ra_bs_correct.
     rewrite ra_dio_poly_find_spec; unfold dio_single_pred.
     split.
     + intros (phi & Hphi); exists (vec_set_pos phi).

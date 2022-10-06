@@ -1,5 +1,5 @@
 (* 
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1) 
   Affiliation(s):
     (1) Saarland University, Saarbrücken, Germany
@@ -20,7 +20,6 @@ Require Import Undecidability.DiophantineConstraints.H10C.
 
 Require Import ssreflect ssrbool ssrfun.
 
-Set Default Proof Using "Type".
 Set Default Goal Selector "!".
 
 Module Argument.

@@ -8,9 +8,9 @@ Import ListAutomationNotations.
 
 From Undecidability.Shared Require Import Dec.
 Require Import Undecidability.Synthetic.DecidabilityFacts.
+Import ListInstances.
 
 Set Default Goal Selector "!".
-Set Default Proof Using "Type".
 
 
 

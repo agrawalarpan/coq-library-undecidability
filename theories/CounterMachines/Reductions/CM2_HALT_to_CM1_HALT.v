@@ -1,5 +1,5 @@
 (*
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1)
   Affiliation(s):
     (1) Saarland University, Saarbrücken, Germany
@@ -26,7 +26,6 @@ From Undecidability.CounterMachines.Util Require CM1_facts CM2_facts.
 
 Require Import ssreflect ssrbool ssrfun.
 
-Set Default Proof Using "Type".
 Set Default Goal Selector "!".
 
 Module Argument.

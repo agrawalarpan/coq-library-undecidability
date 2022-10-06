@@ -2,8 +2,6 @@ From Undecidability.L.Tactics Require Import LTactics.
 From Undecidability.L Require Import UpToC.
 From Undecidability.L.Datatypes Require Export List_enc List_in List_basics LBool LNat.
 
-Set Default Proof Using "Type".
-
 Definition lengthEq A :=
   fix f (t:list A) n :=
     match n,t with
@@ -17,8 +15,9 @@ Proof.
   induction n in t|-*;destruct t;now cbn.
 Qed.
 Definition lengthEq_time k := k * 15 + 9.
+
 #[global]
-Instance term_lengthEq A `{registered A} : computableTime' (lengthEq (A:=A)) (fun l _ => (5, fun n _ => (lengthEq_time (min (length l) n),tt))).
+Instance term_lengthEq A `{encodable A} : computableTime' (lengthEq (A:=A)) (fun l _ => (5, fun n _ => (lengthEq_time (min (length l) n),tt))).
 Proof.
   extract. unfold lengthEq_time. solverec.
 Qed.
@@ -37,7 +36,7 @@ Qed.
 (* prodLists *)
 Section fixprodLists. 
   Variable (X Y : Type).
-  Context `{Xint : registered X} `{Yint : registered Y}.
+  Context `{Xint : encodable X} `{Yint : encodable Y}.
 
   Definition c__prodLists1 := 22 + c__map + c__app. 
   Definition c__prodLists2 := 2 * c__map + 39 + c__app.

@@ -1,6 +1,6 @@
-(* 
-  Autor(s):
-    Andrej Dudenhefner (1) 
+(*
+  Author(s):
+    Andrej Dudenhefner (1)
   Affiliation(s):
     (1) Saarland University, Saarbrücken, Germany
 *)

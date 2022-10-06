@@ -1,5 +1,5 @@
 (* 
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1) 
   Affiliation(s):
     (1) Saarland University, Saarbrücken, Germany
@@ -12,7 +12,7 @@
 
 Require Import Undecidability.Synthetic.Definitions.
 
-Require Import Undecidability.MinskyMachines.MM.
+From Undecidability.MinskyMachines Require Import MM MM_sss.
 From Undecidability.MinskyMachines.Deciders Require
   MM_2_HALTING_dec.
 

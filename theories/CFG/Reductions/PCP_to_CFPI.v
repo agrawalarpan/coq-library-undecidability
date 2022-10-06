@@ -11,7 +11,6 @@ Require Import Undecidability.PCP.Util.PCP_facts.
 Require Import Undecidability.Synthetic.Definitions.
 
 Set Default Goal Selector "!".
-Set Default Proof Using "Type".
 
 (* * PCP to CFPI *)
 Section PCP_CFPI.
@@ -87,7 +86,7 @@ Section PCP_CFPI.
   Proof.
     intros H.
     revert A2. induction A1 as [ | (x,y) ]; cbn; intros.
-    - destruct A2; inv H1; [reflexivity|].
+    - destruct A2 as [ | c A2 ]; inv H1; [reflexivity|].
       destruct c, (gamma A2), l; cbn in *; inv H3.
     - destruct A2 as [ | (x',y')]; cbn in H1.
       + destruct (gamma A1), x; inv H1.
@@ -124,9 +123,9 @@ Proof.
   split.
   - intros (A & Hi & He & H). unfold CFPI. exists (gamma1 P A), (gamma2 P A). repeat split.
     + clear He H. induction A as [ | [] ]. { firstorder. } intros ? [ <- | ].
-      { unfold gamma1. eapply in_map_iff. exists (l, l0). firstorder. } firstorder.
+      { unfold gamma1. eapply in_map_iff. eexists (_, _). firstorder. } firstorder.
     + clear He H. induction A as [ | [] ]. { firstorder. } intros ? [ <- | ].
-      { unfold gamma2. eapply in_map_iff. exists (l, l0). firstorder. } firstorder.
+      { unfold gamma2. eapply in_map_iff. eexists (_, _). firstorder. } firstorder.
     + destruct A; cbn in *; congruence.
     + destruct A; cbn in *; congruence.
     + now rewrite sigma_gamma1, sigma_gamma2, H.

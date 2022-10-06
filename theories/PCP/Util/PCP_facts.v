@@ -60,7 +60,7 @@ Proof. induction A; simpl; auto; rewrite app_ass; simpl; f_equal; auto. Qed.
 Definition card_eq : forall x y : card bool, {x = y} + {x <> y}.
 Proof.
   intros. repeat decide equality.
-Defined.
+Qed.
 
 Global Hint Rewrite (@tau1_app nat) (@tau2_app nat) (@tau1_cards nat) (@tau2_cards nat) : list.
 
@@ -158,7 +158,7 @@ Qed.
 Lemma stack_enum :
   enumerable__T (stack bool).
 Proof.
-  unfold stack, card. eauto.
+  unfold stack. eauto.
 Qed.
 
 Local Definition BSRS := list (card bool).

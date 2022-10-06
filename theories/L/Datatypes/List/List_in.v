@@ -3,7 +3,6 @@ From Undecidability.L Require Import UpToC.
 From Undecidability.L Require Import Functions.EqBool.
 
 From Undecidability.L.Datatypes Require Export List.List_enc.
-Set Default Proof Using "Type".
 
 Section list_in.
   Variable (X : Type). 
@@ -65,7 +64,7 @@ End list_in.
 
 Section list_in_time.
   Variable (X : Type).
-  Context {H : registered X}.
+  Context {H : encodable X}.
   Context (eqbX : X -> X -> bool).
   Context {Xeq : eqbClass eqbX}. 
   Context {XeqbComp : eqbCompT X}. 
@@ -129,7 +128,7 @@ End dupfree_dec.
 
 Section dupfree_dec_time.
   Context {X : Type}.
-  Context {H : registered X}. 
+  Context {H : encodable X}. 
   Context (eqbX : X -> X -> bool).
   Context {Xeq : eqbClass eqbX}. 
   Context {XeqbComp : eqbCompT X}. 

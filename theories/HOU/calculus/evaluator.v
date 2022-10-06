@@ -3,9 +3,7 @@ Require Import Morphisms Setoid.
 From Undecidability.HOU Require Import std.std. 
 From Undecidability.HOU.calculus Require Import 
   prelim terms syntax semantics confluence typing order normalisation. 
-
-
-Set Default Proof Using "Type".
+Import ArsInstances.
 
 (* * Evaluator *)
 Section Evaluator.

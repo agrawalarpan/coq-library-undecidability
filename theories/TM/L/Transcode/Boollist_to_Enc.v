@@ -15,8 +15,6 @@ From Coq Require Import Lia Ring Arith.
 
 From Undecidability Require Import TM.Code.List.Concat_Repeat.
 
-Set Default Proof Using "Type".
-
 Module BoollistToEnc.
   Section M.
     Import ProgrammingTools Combinators App CaseList CaseBool.
@@ -53,7 +51,7 @@ Module BoollistToEnc.
              -> isVoid tin[@Fin2]
              -> isVoid tin[@Fin3]
              -> isVoid tout[@Fin0]
-               /\ tout[@Fin1]  ≃ compile (Computable.enc (rev bs))
+               /\ tout[@Fin1]  ≃ compile (enc (rev bs))
                /\ isVoid tout[@Fin2]
                /\ isVoid tout[@Fin3]).
 
@@ -285,14 +283,14 @@ Module BoollistToEnc.
 
     Definition Terminates := projT2 _Terminates.
 
-    Lemma SpecT  :
+    Lemma SpecT'  :
     { f : UpToC (fun bs => length bs + 1) &
       forall (bs : list bool),
       TripleT 
         (≃≃([],[| Contains _ bs;Void;Void; Void|]) )
         (f bs)
         M
-        (fun _ => ≃≃([],[|Void; Contains _ (compile (Computable.enc (rev bs)));Void;Void|])) }. 
+        (fun _ => ≃≃([],[|Void; Contains _ (compile (enc (rev bs)));Void;Void|])) }. 
     Proof.
       evar (f: list bool -> nat).
       exists_UpToC f.
@@ -306,6 +304,8 @@ Module BoollistToEnc.
         rewrite <- Hk. [f]:intro. now unfold f.
       - subst f. setoid_rewrite UpToC_le. smpl_upToC_solve.
     Qed.     
+    
+    Definition SpecT := projT2 SpecT'.
 
   End M.
 

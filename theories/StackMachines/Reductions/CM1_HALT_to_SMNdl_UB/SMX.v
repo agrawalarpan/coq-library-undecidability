@@ -1,5 +1,5 @@
 (* 
-  Autor(s):
+  Author(s):
     Andrej Dudenhefner (1) 
   Affiliation(s):
     (1) Saarland University, Saarbrücken, Germany
@@ -13,8 +13,6 @@
 Require Import List.
 Import ListNotations.
 Require Import Relation_Operators.
-
-Set Default Proof Using "Type".
 
 Section SMX.
   Context {State Symbol : Set}.

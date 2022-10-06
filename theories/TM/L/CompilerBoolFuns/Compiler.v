@@ -1,5 +1,5 @@
 From Undecidability.Shared.Libs.PSL Require Import FinTypes Vectors.
-From Undecidability.L Require Import L_facts LM_heap_def.
+From Undecidability.L Require Import L_facts LM_heap_def UpToCNary.
 
 
 From Coq Require Import List.
@@ -9,8 +9,6 @@ From Undecidability.TM Require Import TM_facts ProgrammingTools WriteValue CaseL
 From Undecidability.TM.L Require Import Alphabets Eval.
 From Undecidability.TM.L.CompilerBoolFuns Require Import Compiler_spec Compiler_facts ClosedLAdmissible.
 
-Set Default Proof Using "Type".
-
 Section APP_right.
 
   Definition APP_right : pTM (sigPro)^+ unit 2 :=
@@ -19,18 +17,22 @@ Section APP_right.
     App _.
   
   Lemma APP_right_Spec :
-    { f & forall s1 s2 : term,
+    { f : UpToC (fun '(s1,s2)=>size (compile s1) + size (compile s2)) & forall s1 s2 : term,
     TripleT ≃≃([],[|Contains _ (compile s1);Contains _ (compile s2)|])
-    (f s1 s2) APP_right (fun _ => ≃≃([],[|Contains _ (compile (L.app s1 s2));Void|])) }.
+    (f (s1,s2)) APP_right (fun _ => ≃≃([],[|Contains _ (compile (L.app s1 s2));Void|])) }.
   Proof.
-    evar (f : term -> term -> nat).
-    eexists f. [f]:intros s1 s2.
+    eexists_UpToC f. [f]:refine (fun '(s1,s2) => _).
     intros s1 s2.
     unfold APP_right.
     hsteps_cbn.
     -rewrite app_assoc.  reflexivity.
     -reflexivity.
-    -unfold f. reflexivity.
+    - rewrite !(correct__leUpToC (App_steps_nice _) (_,_)).
+      rewrite Encode_list_hasSize with (xs:=(compile s1 ++ compile s2)%list).
+      rewrite Encode_list_hasSize_app, <- !Encode_list_hasSize. reflexivity.
+    -assert (H': (fun x => 1) <=c (fun '(s1,s2)=>size (compile s1) + size (compile s2))).
+     { eapply upToC_le. intros []. setoid_rewrite Encode_list_hasSize. setoid_rewrite <- Encode_list_hasSize_ge1. nia. }
+    unfold f. unfold sigPro. cbn - ["-" "+"]. smpl_upToC. cbn. all:try smpl_upToC_solve.
   Qed.
  
 
@@ -152,26 +154,121 @@ Section mk_init_one.
     BoollistToEnc.M retr_list retr_pro @[|Fin2;Fin3;Fin4;Fin5|];;
     APP_right ⇑ retr_pro  @[|Fin1;Fin3|].
 
-    
+
+
+  Section encodeList_size_eq.
+    Variable X : Type.
+    Variable sigX : Type.
+    Context {cX : codable sigX X}.
+
+    Open Scope list_scope.
+
+    Lemma encodeList_size_app (l1 l2 : list X) :
+      size (l1 ++ l2) <= size l1 + size l2.
+    Proof.
+      rewrite !Encode_list_hasSize in *.
+      cbn. induction l1;cbn. eauto. cbn. cbn. autorewrite with list. lia.
+    Qed.
+
+    Lemma encodeList_size_app_eq (l1 l2 : list X) :
+      size (l1 ++ l2) = size l1 + size l2 - 1.
+    Proof.
+      rewrite !Encode_list_hasSize in *.
+      cbn. induction l1;cbn. lia. autorewrite with list. rewrite IHl1.
+      assert ((Encode_list_size cX l2) > 0) by (induction l2;cbn;lia). lia.
+    Qed.
+
+    Lemma encodeList_size_cons  x (l : list X) :
+      size (x::l) = 1 + size x + size l.
+    Proof.
+      rewrite !Encode_list_hasSize in *.
+      cbn. unfold size. autorewrite with list. lia.
+    Qed.
+
+    Lemma encodeList_size_nil:
+      size (@nil X) = 1.
+    Proof.
+      rewrite !Encode_list_hasSize in *.
+      reflexivity.
+    Qed.
+
+  End encodeList_size_eq.
+
+  Lemma size_Var (n : nat) :
+    size (varT n) = 2 + n.
+  Proof. unfold size. cbn. simpl_list. rewrite repeat_length. cbn. lia. Qed.
+
+  Lemma size_sizeT_le t:
+    size t <= 2* sizeT t.
+  Proof.
+    destruct t.
+    1:rewrite size_Var.
+    all:cbv - [plus mult]. all:nia.
+  Qed.
+
+  Lemma sizeT_ge_1 t:
+    1 <= sizeT t.
+  Proof.
+    destruct t;cbn. all:nia.
+  Qed.
+
+  Lemma size_le_sizeP P:
+    size P <= 3 * sizeP P.
+  Proof.
+    induction P as [ | t P].
+    {now cbv. }
+    setoid_rewrite encodeList_size_cons. rewrite IHP.
+    unfold sizeP;cbn. setoid_rewrite size_sizeT_le.
+    specialize (sizeT_ge_1 t). nia.
+  Qed.
+
+
+
+Lemma size_L_enc_bools : (fun (bs:list bool) => L_facts.size (Extract.enc bs)) <=c (fun bs => length bs + 1).
+Proof.
+  etransitivity.
+  -eapply upToC_le with (F:= (fun bs => _ ));intros bs.
+   rewrite Lists.size_list, sumn_le_bound.
+   2:{ intros ? (?&<-&?)%in_map_iff. rewrite LBool.size_bool. reflexivity. }
+   rewrite map_length. reflexivity.
+   -cbn. smpl_upToC_solve.
+Qed. 
+
+
   Lemma M_init_one_Spec :
-    { f & forall (bs:list bool) (ter : L.term),
+    { f : UpToC (fun '(bs,ter)=>length bs + L_facts.size ter + 1) & forall (bs:list bool) (ter : L.term),
     TripleT ≃≃([],[|Custom (eq (encBoolsTM s b bs));Contains _ (compile ter);Void;Void;Void;Void|])
-    (f bs ter) M_init_one (fun _ => ≃≃([],[|Custom (eq (encBoolsTM s b bs));Contains _ (compile (L.app ter (encBoolsL bs)));Void;Void;Void;Void|])) }.
+    (f (bs,ter)) M_init_one (fun _ => ≃≃([],[|Custom (eq (encBoolsTM s b bs));Contains _ (compile (L.app ter (encBoolsL bs)));Void;Void;Void;Void|])) }.
   Proof using H_disj.
-    evar (f : list bool -> term -> nat).
-    eexists f. [f]:intros bs ter.
+    eexists_UpToC f. 
+    { 
+    [f]:refine (fun '(bs,ter) => _).
     intros bs ter.
     unfold M_init_one.
     hstep. { hsteps_cbn. cbn. eapply (projT2 (encBoolsTM2boollist.SpecT _ H_disj)). }
     cbn. intros _. hstep. { hsteps_cbn. cbn. tspec_ext. } 2:reflexivity.
     cbn. intros _. hstep.
     {
-      hsteps_cbn. cbn. eapply ConsequenceT. eapply (projT2 (@BoollistToEnc.SpecT _ _ _) (rev bs)).
+      hsteps_cbn. cbn. eapply ConsequenceT. eapply BoollistToEnc.SpecT with (bs:=rev bs).
       all:cbn. now tspec_ext. now rewrite rev_involutive. reflexivity.
     } 2:reflexivity.
     cbn. intros _. hsteps_cbn.
      now eapply (projT2 (APP_right_Spec)). 1,2:now cbn;tspec_ext.
-     subst f. cbn beta. reflexivity.
+     subst f. cbn beta. cbn beta iota.  reflexivity.
+    }
+    etransitivity.
+    {
+       unfold f. eapply upToC_le with (F:=fun '(bs,ter) => _). intros [bs ter].
+       rewrite (correct__leUpToC (Rev_steps_nice _)).
+       rewrite (correct__leUpToC (BoollistEnc.boollist_size)).
+       do 3 rewrite (correct__leUpToC (correct__UpToC _)).
+       rewrite rev_length.
+       rewrite !size_le_sizeP.
+       unfold sizeP;rewrite !sizeP_size.
+       rewrite (correct__leUpToC size_L_enc_bools).
+       reflexivity.
+    }
+       smpl_upToC_solve.
   Qed.
 
 End  mk_init_one.
