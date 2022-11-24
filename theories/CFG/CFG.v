@@ -15,7 +15,6 @@ Definition rule : Type := sig * list sig.
 Definition cfg : Type := sig * list rule.
 Definition rules (G : cfg) := snd G.
 Definition startsym (G : cfg) := fst G.
-Definition leftmost_derivation : Type := list rule.
 
 (* single step context-free derivation *)
 Inductive rew_cfg : cfg -> list sig -> list sig -> Prop :=
@@ -126,66 +125,3 @@ Definition CFP : cfg -> Prop :=
   their intersection is not empty. *)
 Definition CFI : cfg * cfg -> Prop :=
   fun '(G1, G2) => exists x, L G1 x /\ L G2 x.
-
-(* 
-Variable S x y : nat.
-Definition CFG1 := (S, [(S, [S]) ; (S, [x ; S]) ; (S, [y])]).
-
-Print In.
-
-Definition inrules : In (S, [y]) (rules CFG1) /\ terminal CFG1 [].
-Proof.
-  split.
-  - firstorder.
-  - hnf. intros. destruct H as [y H2]. inversion H2. Admitted.
-
-(* Definition ld1 := 
-rewtRule_left CFG1 [S] ([] ++ [S] ++ []) ([] ++ [S] ++ []) (rewtRefl_left CFG1 [S] )
-(rewtRule_left CFG1 [S] ([] ++ [S] ++ []) ( [] ++ [y] ++ []) (rewtRefl_left CFG1 [S]) (rewR_left CFG1 [] S [] [y] inrules)). *)
-
-Definition ld2 := 
-  (rewtRule_left CFG1 [S] ([] ++ [S] ++ []) ( [] ++ [y] ++ []) (rewtRefl_left CFG1 [S]) (rewR_left CFG1 [] S [] [y] inrules)). *)
-
-
-  (* (:) use to define ++ *)
-(* 
-Example trial : ld1 = ld2.
-Proof.
-  reflexivity.
-Qed.
-
-Example trial2 : ld1 <> ld2. *)
-(* 
-
-Fixpoint eq_left_derivations (G : cfg) (x: list sig) (ld1 ld2 : rewt_left G [startsym G] x) : Prop := 
-  match ld1 with
-    | rewtRefl_left _ _ => True
-    | rewtRule_left G _ _ _ rewtRule_smaller1 rew_cfg1 =>
-    match ld2 with
-      | rewtRefl_left _ _ => False
-      | rewtRule_left G _ _ _ rewtRule_smaller2 rew_cfg2 =>
-    eq_left_derivations G x (rewtRule_smaller1) (rewtRule_smaller2) /\ eq_cfg_left derivations G x (rew_cfg1) (rew_cfg2)
-    end.
-  end.
-
-
-
-Lemma firstdiffertoolatetobeequalyoufuckedup. 
-
-transcribe
- *)
-
-(* 
-
-Fixpoint tr : leftmost_derivation ... -> list ...
-Lemma transcribed : eq_ld ld1 ld2 -> eq_list (tr ld1) (tr ld2). 
-
-
-Main Proof.
-  context. (tr ld1 = tr ld2) -> False --because ld1 and ld2 will just be different lists.
-  compose (ld1 = ld2) lemmatranscribed. Qed. *)
-
-(* Inductive eq_left_derivations' () *)
-
-
-
