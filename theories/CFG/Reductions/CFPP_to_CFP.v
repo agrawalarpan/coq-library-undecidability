@@ -268,12 +268,12 @@ Section Post_CFG.
   Variable R : stack nat.
   Variable a : nat.
   Variable S : nat.
-  Definition Sigma := sym R ++ [a].
+  Let Sigma := sym R ++ [a].
   Variable S_fresh : forall a, In a Sigma -> S <> a.
 
   (* Definition S : nat := fresh Sigma. *)
 
-  Definition G := (S, (S,[S]) :: map (fun '(u, v) => (S, u ++ [S] ++ v)) R ++ map (fun '(u, v) => (S, u ++ [a] ++ v)) R).
+  Let G := (S, (S,[S]) :: map (fun '(u, v) => (S, u ++ [S] ++ v)) R ++ map (fun '(u, v) => (S, u ++ [a] ++ v)) R).
   
   Lemma terminal_iff_G y :
     terminal G y <-> ~ S el y.
@@ -410,6 +410,7 @@ Qed.
   Lemma Post_CFG_2_left x :
     rewt_left G [S] x ->
     exists A m, A <<= R /\ sigma m A = x /\ (m = S \/ m = a /\ A <> []).
+  Proof using S_fresh.
     intros. induction H.
     - cbn.  exists [], S. eauto.
     - inv H0. destruct H1 as [ H12 H22 ]. destruct H12 as [| [(? & ? & ?) % in_map_iff | (? & ? & ?) % in_map_iff] % in_app_iff]; inv H0.
@@ -470,27 +471,27 @@ Qed.
       + exists A. eauto.
   Qed.
 
-  Lemma reduction_full x :
-    (exists A, A <<= R /\ A <> [] /\ sigma a A = x) <->  L G x.
-  Proof.
-    split.
-    - intros (A & ? & ? & ?). subst. destruct Post_CFG_1' with (A := A); intuition.
-      split.
-      + eassumption.
-      + eapply terminal_iff_G. rewrite sigma_eq. intros E.
-        edestruct fresh_spec with (l := sym R ++ [a]); try reflexivity.        
-        eapply in_app_iff in E as [ | [ | ? % tau2_gamma ] % in_app_iff].
-        * eapply in_app_iff. left. eapply sym_mono; eauto. now eapply tau1_sym.
-        * eapply in_app_iff. right. eauto.
-        * eapply in_app_iff. left. eapply sym_mono; eauto. now eapply tau2_sym.
-    - intros [(A & m & HA & HE & Hm) % Post_CFG_2 ?].
-      subst. destruct Hm as [-> | [-> ?]].
-      + eapply terminal_iff_G in H.  exfalso. rewrite sigma_eq in H.
-        eapply H. eauto.        
-      + exists A. eauto.
-  Qed.
 
 End Post_CFG.
+
+
+Section NewSection.
+  
+  Variable R : stack nat.
+  Variable a : nat.
+
+  Definition Sigma := sym R ++ [a].
+  Definition S : nat := fresh Sigma.
+
+  Definition G := (S, (S,[S]) :: map (fun '(u, v) => (S, u ++ [S] ++ v)) R ++ map (fun '(u, v) => (S, u ++ [a] ++ v)) R).
+  
+  Lemma reduction_full x:(exists A, A <<= R /\ A <> [] /\ sigma a A = x) <->  L G x.
+  Proof.
+    apply (reduction_full_with_S R a S). intros. eapply fresh_spec. exact H.
+  Qed.
+    
+
+End NewSection.
 
 Theorem reduction :
   CFPP ⪯ CFP.
