@@ -292,7 +292,7 @@ Section Post_CFG.
   Proof using S_fresh.
     induction 1.
     - cbn. now rewrite Nat.eqb_refl.
-    - inv H0. destruct H1 as [ | [ [[] []] % in_map_iff | [[] []] % in_map_iff ] % in_app_iff]; inv H0.
+    - inv H0. destruct H1 as [ | [ [[] []] % in_map_iff | [[] []] % in_map_iff ] % in_app_iff]; symmetry in H0; inv H0.
       + eauto.
       + unfold Sigma. simpl_list. rewrite <- !countSplit in *. cbn in *.
         rewrite Nat.eqb_refl in *.
@@ -322,7 +322,7 @@ Section Post_CFG.
   Proof using S_fresh.
     induction 1.
     - cbn. rewrite <- (beq_nat_refl S). firstorder.
-    - inv H0. destruct H1 as [H11 H12]. destruct H11 as [ | [ [[] []] % in_map_iff | [[] []] % in_map_iff ] % in_app_iff]; inv H0. 
+    - inv H0. destruct H1 as [H11 H12]. destruct H11 as [ | [ [[] []] % in_map_iff | [[] []] % in_map_iff ] % in_app_iff]; symmetry in H0; inv H0. 
     + eauto.
     + simpl_list. rewrite <- !countSplit in *. cbn in *.
       rewrite Nat.eqb_refl in *.
@@ -368,7 +368,7 @@ Qed.
   Proof using S_fresh.
     intros. induction H.
     - cbn.  exists [], S. eauto.
-    - inv H0. destruct H1 as [ | [(? & ? & ?) % in_map_iff | (? & ? & ?) % in_map_iff] % in_app_iff]; inv H0.
+    - inv H0. destruct H1 as [ | [(? & ? & ?) % in_map_iff | (? & ? & ?) % in_map_iff] % in_app_iff]; symmetry in H0; inv H0.
       + eassumption.
       + destruct x0 as [u' v']. inv H3.
         destruct IHrewt as (A & m & HA & IHA & Hm).
@@ -413,7 +413,7 @@ Qed.
   Proof using S_fresh.
     intros. induction H.
     - cbn.  exists [], S. eauto.
-    - inv H0. destruct H1 as [ H12 H22 ]. destruct H12 as [| [(? & ? & ?) % in_map_iff | (? & ? & ?) % in_map_iff] % in_app_iff]; inv H0.
+    - inv H0. destruct H1 as [ H12 H22 ]. destruct H12 as [| [(? & ? & ?) % in_map_iff | (? & ? & ?) % in_map_iff] % in_app_iff]; symmetry in H0; inv H0.
       + eassumption.
       + destruct x0 as [u' v']. inv H3.
         destruct IHrewt_left as (A & m & HA & IHA & Hm).
@@ -485,7 +485,7 @@ Section NewSection.
 
   Definition G := (S, (S,[S]) :: map (fun '(u, v) => (S, u ++ [S] ++ v)) R ++ map (fun '(u, v) => (S, u ++ [a] ++ v)) R).
   
-  Lemma reduction_full x:(exists A, A <<= R /\ A <> [] /\ sigma a A = x) <->  L G x.
+  Lemma reduction_full x : (exists A, A <<= R /\ A <> [] /\ sigma a A = x) <->  L G x.
   Proof.
     apply (reduction_full_with_S R a S). intros. eapply fresh_spec. exact H.
   Qed.

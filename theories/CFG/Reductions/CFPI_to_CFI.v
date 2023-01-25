@@ -14,7 +14,7 @@ Require Import Undecidability.Synthetic.Definitions.
 Theorem reduction :
   CFPI ⪯ CFI.
 Proof.
-  exists (fun '(R1, R2, a) => (CFPP_to_CFP.G R1 a (fresh (sym R1 ++ [a])), CFPP_to_CFP.G R2 a (fresh (sym R2 ++ [a])))). intros [[R1 R2] a].
+  exists (fun '(R1, R2, a) => (CFPP_to_CFP.G R1 a, CFPP_to_CFP.G R2 a)). intros [[R1 R2] a].
   intuition; cbn in *.
   - destruct H as (A1 & A2 & HR1 & HR2 & HA1 & HA2 & H).
     exists (sigma a A1). split; eapply CFPP_to_CFP.reduction_full; eauto.
